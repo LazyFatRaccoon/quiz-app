@@ -1,14 +1,23 @@
+.App {
+  padding: 20px;
+}
+
+p {
+  font-size: 24px;
+  max-width: 900px;
+}
+
 .button {
   padding: 10px 20px;
   margin: 6px;
   border-radius: 12px;
   border: none;
-  background-color: black;
+  background-color: #2779bd;
   color: white;
   cursor: pointer;
   font-size: 16px;
   width: 300px;
-  height: 120px;
+  height: 60px;
   white-space: normal;
   word-break: break-word;
   text-align: center;
@@ -28,8 +37,14 @@
   margin-right: auto;
 }
 
+@media (min-width: 721px) {
+  .grid-answers {
+    max-width: 800px; /* для екранів більше 720px */
+  }
+}
 .button.fixed {
-  width: 300px;
+  font-size: clamp(12px, 1.8vw, 24px);
+  width: 360px;
   height: 120px;
   display: flex;
   justify-content: center;
@@ -39,7 +54,7 @@
   text-overflow: ellipsis;
   white-space: normal;
   word-break: break-word;
-  padding: 100px;
+  padding: 10px;
 }
 
 .button:hover {
@@ -66,6 +81,9 @@
 }
 
 .card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 16px;
@@ -87,4 +105,21 @@
   cursor: pointer;
   border-radius: 12px;
   background-color: #f9f9f9;
+}
+
+/* Заборонити курсор-введення для всіх, крім питань */
+button,
+input,
+.button,
+.upload-box {
+  user-select: none;
+  caret-color: transparent;
+}
+
+/* Дозволити виділення тексту тільки для тексту питання */
+h2,
+.card p,
+.card strong {
+  user-select: text;
+  caret-color: transparent; /* курсор не з'являється */
 }
