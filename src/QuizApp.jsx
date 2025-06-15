@@ -2,8 +2,17 @@ import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import "./styles.css";
 
+//function shuffle(array) {
+//  return [...array].sort(() => Math.random() - 0.5);
+//}
+
 function shuffle(array) {
-  return [...array].sort(() => Math.random() - 0.5);
+  const arr = [...array]; // Створюємо копію, не мутуємо оригінал
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // Випадковий індекс від 0 до i
+    [arr[i], arr[j]] = [arr[j], arr[i]]; // Обмін елементів
+  }
+  return arr;
 }
 
 export default function QuizApp() {
@@ -210,7 +219,7 @@ export default function QuizApp() {
           {answers
             .filter((a) => !a.isCorrect)
             .map((a, i) => (
-              <li key={i} className="card">
+              <li key={i} className="card stats">
                 <p>
                   <strong>
                     {a.number}. {a.question}
