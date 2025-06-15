@@ -19,11 +19,15 @@ export default function QuizApp() {
   const [currentOptions, setCurrentOptions] = useState([]);
   const fileInputRef = useRef(null);
   const [availableFiles, setAvailableFiles] = useState([]);
+  const [startFrom, setStartFrom] = useState(1);
 
   useEffect(() => {
     fetch("/TESTS/index.json")
       .then((res) => res.json())
-      .then(setAvailableFiles);
+      .then(setAvailableFiles)
+      .catch((err) =>
+        console.error("Не вдалося завантажити список файлів:", err)
+      );
   }, []);
 
   const handleFileUpload = (e) => {
@@ -60,11 +64,12 @@ export default function QuizApp() {
   };
 
   const startQuiz = () => {
+    const index = Math.max(0, Math.min(startFrom - 1, questions.length - 1));
     setAnswers([]);
-    setCurrentQuestionIndex(0);
+    setCurrentQuestionIndex(index);
     setStarted(true);
     setStartTime(Date.now());
-    const current = questions[0];
+    const current = questions[index];
     const opts = shuffle([
       current["Правильна відповідь"],
       current["варіант№2"],
@@ -112,7 +117,10 @@ export default function QuizApp() {
     setStarted(false);
     setAnswers([]);
     setStartTime(null);
-    if (file?.name.endsWith(".xlsx")) handlePredefinedFile(file.name);
+    setSelected(null);
+    setCurrentQuestionIndex(0);
+    setCurrentOptions([]);
+    if (file?.name?.endsWith(".xlsx")) handlePredefinedFile(file.name);
     else if (file) handleFileUpload({ target: { files: [file] } });
   };
 
@@ -148,11 +156,25 @@ export default function QuizApp() {
           </label>
         </div>
         <div>
+          <label>
+            Початкове питання:
+            <input
+              type="number"
+              min="1"
+              max={questions.length}
+              value={startFrom}
+              onChange={(e) => setStartFrom(Number(e.target.value))}
+              disabled={questions.length === 0}
+              style={{ width: "60px", marginLeft: "10px" }}
+            />
+          </label>
+        </div>
+        <div>
           <p>Або оберіть один із доступних тестів:</p>
           {availableFiles.map((name) => (
             <button
               key={name}
-              className="button"
+              className="button quiz"
               onClick={() => handlePredefinedFile(name)}
             >
               {name}
@@ -204,7 +226,7 @@ export default function QuizApp() {
               </li>
             ))}
         </ul>
-        <button className="button" onClick={restart}>
+        <button className="button finish" onClick={restart}>
           Розпочати наново
         </button>
       </div>
@@ -220,9 +242,10 @@ export default function QuizApp() {
       </h2>
       <div className="card">
         <p>
-          <strong>{current["Порядковий номер питання"]}</strong>
+          <strong>{current["Порядковий номер питання"]}</strong> {". "}
+          {current["Текст питання"]}
         </p>
-        <p>{current["Текст питання"]}</p>
+
         <div className="grid-answers">
           {currentOptions.map((opt, i) => (
             <button
@@ -244,7 +267,7 @@ export default function QuizApp() {
           ))}
         </div>
       </div>
-      <button className="button" onClick={() => setFinished(true)}>
+      <button className="button finish" onClick={() => setFinished(true)}>
         Завершити тест
       </button>
     </div>

@@ -2,14 +2,23 @@
   padding: 20px;
 }
 
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+h2 {
+  margin: 0;
+}
 p {
-  font-size: 24px;
-  max-width: 900px;
+  font-size: clamp(2rem, 0.652rem + 1.739vw, 2.5rem);
+  max-width: 1200px;
+  margin: 0;
 }
 
 .button {
   padding: 10px 20px;
-  margin: 6px;
+  margin: 2px;
   border-radius: 12px;
   border: none;
   background-color: #2779bd;
@@ -17,8 +26,8 @@ p {
   cursor: pointer;
   font-size: 16px;
   width: 300px;
-  height: 60px;
-  white-space: normal;
+  min-height: 60px;
+  min-width: 300px;
   word-break: break-word;
   text-align: center;
   display: flex;
@@ -30,22 +39,17 @@ p {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
+  gap: clamp(5px, 1.2vw, 12px);
   margin-top: 12px;
-  max-width: 400px; /* необов'язково — щоб обмежити ширину */
+  max-width: 1500px; /* необов'язково — щоб обмежити ширину */
   margin-left: auto;
   margin-right: auto;
 }
 
-@media (min-width: 721px) {
-  .grid-answers {
-    max-width: 800px; /* для екранів більше 720px */
-  }
-}
 .button.fixed {
-  font-size: clamp(12px, 1.8vw, 24px);
-  width: 360px;
-  height: 120px;
+  font-size: clamp(1.5rem, 0.652rem + 1.739vw, 2rem);
+  width: 300px;
+  min-height: 80px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -57,8 +61,37 @@ p {
   padding: 10px;
 }
 
+.button.finish {
+  background-color: #bd276d;
+  font-size: 20px;
+}
+
+.button.quiz {
+  background-color: #08c75e;
+}
+
+@media (min-width: 400px) and (max-width: 800px) {
+  .button.fixed {
+    width: 100%; /* займе ширину контейнера */
+  }
+}
+
+@media (min-width: 801px) {
+  .button.fixed {
+    width: 40%;
+  }
+}
+
 .button:hover {
   background-color: #2779bd;
+}
+
+.button.quiz:hover {
+  background-color: #08691f;
+}
+
+.button.finish:hover {
+  background-color: #e810ef;
 }
 
 .button:disabled {
@@ -92,6 +125,10 @@ p {
   padding: 16px;
   background-color: white;
   margin-bottom: 16px;
+}
+
+.card.stats {
+  align-items: flex-start;
 }
 
 @media (min-width: 700px) {
