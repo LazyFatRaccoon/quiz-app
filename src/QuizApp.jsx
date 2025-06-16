@@ -1,19 +1,21 @@
+// QuizApp.jsx
 import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import "./styles.css";
 
-//function shuffle(array) {
-//  return [...array].sort(() => Math.random() - 0.5);
-//}
-
 function shuffle(array) {
-  const arr = [...array]; // Створюємо копію, не мутуємо оригінал
+  const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1)); // Випадковий індекс від 0 до i
-    [arr[i], arr[j]] = [arr[j], arr[i]]; // Обмін елементів
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
+
+const getProblemStats = () =>
+  JSON.parse(localStorage.getItem("problemStats") || "{}");
+const saveProblemStats = (stats) =>
+  localStorage.setItem("problemStats", JSON.stringify(stats));
 
 export default function QuizApp() {
   const [questions, setQuestions] = useState([]);
@@ -29,6 +31,7 @@ export default function QuizApp() {
   const fileInputRef = useRef(null);
   const [availableFiles, setAvailableFiles] = useState([]);
   const [startFrom, setStartFrom] = useState(1);
+  const [problemCount, setProblemCount] = useState(0);
 
   useEffect(() => {
     fetch("/TESTS/index.json")
@@ -39,8 +42,36 @@ export default function QuizApp() {
       );
   }, []);
 
+  const updateProblemStats = (questionNumber, correct, fileName) => {
+    const stats = getProblemStats();
+    const fileStats = stats[fileName] || {};
+    const currentStreak = fileStats[questionNumber] ?? null;
+
+    if (correct) {
+      if (currentStreak !== null) {
+        fileStats[questionNumber] = currentStreak + 1;
+        if (fileStats[questionNumber] >= 2) delete fileStats[questionNumber];
+      }
+    } else {
+      fileStats[questionNumber] = 0;
+    }
+
+    stats[fileName] = fileStats;
+    saveProblemStats(stats);
+    setProblemCount(Object.keys(fileStats).length);
+  };
+
+  const filterProblems = (data, fileName) => {
+    const stats = getProblemStats();
+    const fileStats = stats[fileName] || {};
+    return data.filter(
+      (q) => fileStats[q["Порядковий номер питання"]] !== undefined
+    );
+  };
+
   const handleFileUpload = (e) => {
     const uploadedFile = e.target.files[0];
+    if (!uploadedFile) return;
     setFile(uploadedFile);
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -51,6 +82,8 @@ export default function QuizApp() {
       const data = XLSX.utils.sheet_to_json(ws);
       const prepared = randomize ? shuffle(data) : data;
       setQuestions(prepared);
+      const stats = getProblemStats();
+      setProblemCount(Object.keys(stats[uploadedFile.name] || {}).length);
     };
     reader.readAsBinaryString(uploadedFile);
   };
@@ -68,17 +101,26 @@ export default function QuizApp() {
       const prepared = randomize ? shuffle(data) : data;
       setQuestions(prepared);
       setFile({ name: fileName });
+      const stats = getProblemStats();
+      setProblemCount(Object.keys(stats[fileName] || {}).length);
     };
     reader.readAsBinaryString(blob);
   };
 
-  const startQuiz = () => {
-    const index = Math.max(0, Math.min(startFrom - 1, questions.length - 1));
+  const startQuiz = (onlyProblems = false) => {
+    let data = [...questions];
+    if (onlyProblems) {
+      data = filterProblems(data, file.name);
+      // problemMode set to true (removed React state for performance)
+    } else {
+      // problemMode set to false (removed React state for performance)
+    }
+    const index = Math.max(0, Math.min(startFrom - 1, data.length - 1));
     setAnswers([]);
     setCurrentQuestionIndex(index);
     setStarted(true);
     setStartTime(Date.now());
-    const current = questions[index];
+    const current = data[index];
     const opts = shuffle([
       current["Правильна відповідь"],
       current["варіант№2"],
@@ -86,6 +128,7 @@ export default function QuizApp() {
       current["варіант№4"],
     ]);
     setCurrentOptions(opts);
+    setQuestions(data);
   };
 
   const handleAnswer = (answer) => {
@@ -93,6 +136,14 @@ export default function QuizApp() {
     const current = questions[currentQuestionIndex];
     setSelected(answer);
     const correct = current["Правильна відповідь"];
+    const isCorrect = answer === correct;
+
+    updateProblemStats(
+      current["Порядковий номер питання"],
+      isCorrect,
+      file.name
+    );
+
     setAnswers([
       ...answers,
       {
@@ -100,9 +151,10 @@ export default function QuizApp() {
         question: current["Текст питання"],
         correct,
         selected: answer,
-        isCorrect: answer === correct,
+        isCorrect,
       },
     ]);
+
     setTimeout(() => {
       const nextIndex = currentQuestionIndex + 1;
       if (nextIndex >= questions.length) setFinished(true);
@@ -129,6 +181,7 @@ export default function QuizApp() {
     setSelected(null);
     setCurrentQuestionIndex(0);
     setCurrentOptions([]);
+
     if (file?.name?.endsWith(".xlsx")) handlePredefinedFile(file.name);
     else if (file) handleFileUpload({ target: { files: [file] } });
   };
@@ -190,13 +243,20 @@ export default function QuizApp() {
             </button>
           ))}
         </div>
-        <button
-          className="button"
-          onClick={startQuiz}
-          disabled={questions.length === 0}
-        >
-          Розпочати тест
-        </button>
+        <div style={{ marginTop: "20px" }}>
+          <button
+            className="button"
+            onClick={() => startQuiz(false)}
+            disabled={questions.length === 0}
+          >
+            Розпочати тест
+          </button>
+          {problemCount > 0 && (
+            <button className="button" onClick={() => startQuiz(true)}>
+              Проблемні питання ({problemCount})
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -251,10 +311,9 @@ export default function QuizApp() {
       </h2>
       <div className="card">
         <p>
-          <strong>{current["Порядковий номер питання"]}</strong> {". "}
+          <strong>{current["Порядковий номер питання"]}</strong>.{" "}
           {current["Текст питання"]}
         </p>
-
         <div className="grid-answers">
           {currentOptions.map((opt, i) => (
             <button
